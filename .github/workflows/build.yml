@@ -1,11 +1,12 @@
-name: Build apps
+name: Build & Release
 
-# Windows .exe ve macOS .app dosyalarını otomatik üretir.
-# Çıktılar: Actions sekmesi → ilgili çalışma → Artifacts.
+# Builds the Windows .exe + macOS .app and publishes them to a GitHub Release
+# whenever a version tag (e.g. v1.0.0) is pushed. Can also be run manually
+# (workflow_dispatch) to produce downloadable artifacts without a release.
 
 on:
   push:
-    branches: [ main ]
+    tags: [ "v*" ]
   workflow_dispatch:
 
 jobs:
@@ -18,12 +19,10 @@ jobs:
             sep: ";"
             onefile: "--onefile"
             artifact: SamfunnskunnskapQuiz-Windows
-            path: dist/SamfunnskunnskapQuiz.exe
           - os: macos-latest
             sep: ":"
             onefile: ""
             artifact: SamfunnskunnskapQuiz-macOS
-            path: dist/SamfunnskunnskapQuiz.app
 
     runs-on: ${{ matrix.os }}
 
@@ -34,20 +33,51 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Bağımlılıkları kur
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Paketle (PyInstaller)
+      - name: Build (PyInstaller)
         run: >
           pyinstaller --noconfirm --windowed ${{ matrix.onefile }}
           --name SamfunnskunnskapQuiz
           --add-data "samfunnskunnskap_quiz.html${{ matrix.sep }}."
           app.py
 
-      - name: Çıktıyı yükle
-        uses: actions/upload-artifact@v4
+      - name: Zip the .app bundle (macOS)
+        if: runner.os == 'macOS'
+        run: cd dist && zip -r -y SamfunnskunnskapQuiz-macOS.zip SamfunnskunnskapQuiz.app
+
+      - name: Collect release asset
+        shell: bash
+        run: |
+          mkdir -p out
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            cp dist/SamfunnskunnskapQuiz.exe out/
+          else
+            cp dist/SamfunnskunnskapQuiz-macOS.zip out/
+          fi
+
+      - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: ${{ matrix.path }}
+          path: out/*
+          retention-days: 5
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/**/*
+          generate_release_notes: true

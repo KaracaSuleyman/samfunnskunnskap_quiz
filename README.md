@@ -18,25 +18,29 @@ A desktop quiz app for preparing for the Norwegian **samfunnskunnskap** (social 
 
 ## ⬇️ Download & Run
 
-Grab the prebuilt apps from the [**Actions**](https://github.com/KaracaSuleyman/samfunnskunnskap_quiz/actions/workflows/build.yml) tab: click the latest (top) run → scroll to the **Artifacts** section at the bottom.
+Download the latest build from the [**Releases**](https://github.com/KaracaSuleyman/samfunnskunnskap_quiz/releases) page — no GitHub account needed, and the files never expire.
 
 ### 🪟 Windows
-1. Download the `SamfunnskunnskapQuiz-Windows` artifact (comes as a `.zip`).
-2. Extract it → it contains a single **`SamfunnskunnskapQuiz.exe`**.
-3. Double-click it.
-4. If you see *"Windows protected your PC"* on first launch: **More info → Run anyway**. (Normal, since the app is unsigned.)
+1. Download **`SamfunnskunnskapQuiz.exe`**.
+2. Double-click it.
+3. If you see *"Windows protected your PC"* on first launch: **More info → Run anyway**. (Normal, since the app is unsigned.)
 
 ### 🍎 macOS
-1. Download the `SamfunnskunnskapQuiz-macOS` artifact, extract it → **`SamfunnskunnskapQuiz.app`**.
+1. Download **`SamfunnskunnskapQuiz-macOS.zip`** and unzip it → **`SamfunnskunnskapQuiz.app`**.
 2. On first launch, **right-click → Open** (Gatekeeper asks once because the app is unsigned).
-
-> 💡 **Note:** Actions artifacts can only be downloaded by signed-in GitHub users and expire after a while. For a permanent public download, create a **Release** and upload the `.exe` / `.app` there.
 
 ---
 
 ## 🛠️ Build it yourself (for developers)
 
-On every push, [GitHub Actions](.github/workflows/build.yml) automatically builds the Windows `.exe` and macOS `.app`. To build locally:
+[GitHub Actions](.github/workflows/build.yml) builds the Windows `.exe` and macOS `.app` and attaches them to a **GitHub Release** whenever a version tag is pushed:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+To build locally instead:
 
 ```bash
 python3 -m venv .venv

@@ -1,0 +1,4 @@
+# samfunnskunnskap_quiz.html is a bundled output/asset, not source to showcase.
+# Exclude it from GitHub's language statistics so the repo is classified by its Python.
+samfunnskunnskap_quiz.html linguist-vendored
+template.html              linguist-vendored

@@ -1,0 +1,3 @@
+# Only needed to regenerate samfunnskunnskap_quiz.html from the .docx sources
+# via generate_quiz.py. Not required to run or build the app.
+python-docx

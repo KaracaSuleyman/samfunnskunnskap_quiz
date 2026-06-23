@@ -8,5 +8,9 @@ build/
 dist/
 *.spec
 
+# IDE / editor
+.idea/
+.vscode/
+
 # macOS
 .DS_Store

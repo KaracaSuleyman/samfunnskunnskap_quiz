@@ -34,7 +34,11 @@ Download the latest build from the [**Releases**](https://github.com/KaracaSuley
 
 ### 🍎 macOS
 1. Download **`SamfunnskunnskapQuiz-macOS.zip`** and unzip it → **`SamfunnskunnskapQuiz.app`**.
-2. On first launch, **right-click → Open** (Gatekeeper asks once because the app is unsigned).
+2. The app is unsigned, so macOS blocks it the first time (*"Apple could not verify…"*). To allow it, either:
+   - **System Settings → Privacy & Security**, scroll down and click **Open Anyway** next to *SamfunnskunnskapQuiz*, then confirm; **or**
+   - run `xattr -dr com.apple.quarantine ~/Downloads/SamfunnskunnskapQuiz.app` in Terminal once, then double-click the app.
+
+> 💡 The block appears for everyone because the app isn't signed/notarized (that needs a paid Apple Developer account). The steps above are a one-time allow.
 
 ---
 

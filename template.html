@@ -151,22 +151,9 @@
   <div class="main">
     <div class="start-screen">
       <h2>🇳🇴 Velg prøvemodus</h2>
-      <p class="subtitle">Velg om du vil starte med Prøve 1 (faste spørsmål) eller ta en tilfeldig blanding</p>
+      <p class="subtitle">Velg ett tema for å øve, eller ta en blandet prøve fra alle temaene.</p>
       <p class="stats-info" id="pool-stats">Laster spørsmål...</p>
-      <div class="mode-grid">
-        <div class="mode-card selected" id="card-prove1" onclick="selectMode('prove1')">
-          <div class="mode-icon">📋</div>
-          <div class="mode-title">Prøve 1 — Fast</div>
-          <div class="mode-desc">De første __PROVE1_COUNT__ spørsmålene fra fil 1, i fast rekkefølge. Bra for å lære systematisk.</div>
-          <span class="mode-badge">Anbefalt første gang</span>
-        </div>
-        <div class="mode-card" id="card-random" onclick="selectMode('random')">
-          <div class="mode-icon">🎲</div>
-          <div class="mode-title">Tilfeldig prøve</div>
-          <div class="mode-desc">__RANDOM_COUNT__ tilfeldige spørsmål fra alle filer. Shakes og byttes ved hvert forsøk.</div>
-          <span class="mode-badge">God for repetisjon</span>
-        </div>
-      </div>
+      <div class="mode-grid" id="mode-grid"></div>
       <button class="btn-start" id="btn-start" onclick="startQuiz()">▶ Start prøven</button>
       <p class="credit">Laget av <b>Suleyman Karaca</b> · 2026</p>
     </div>
@@ -248,16 +235,30 @@
 // ═══════════════════════════════════════════════════
 //  SPØRSMÅLSDATA  (auto-generert av generate_quiz.py)
 // ═══════════════════════════════════════════════════
-const DATA = __QUIZ_DATA__;
+const DATA   = __QUIZ_DATA__;
+const TOPICS = __TOPICS_META__;   // [{key, title, icon}]
+const COUNT  = __COUNT__;         // questions drawn per quiz, all modes
+const PASS_RATIO = 0.65;          // share of correct answers needed to pass
 
-const PROVE1_COUNT  = __PROVE1_COUNT__;
-const RANDOM_COUNT  = __RANDOM_COUNT__;
-const PASS_THRESHOLD = Math.round((PROVE1_COUNT > RANDOM_COUNT ? PROVE1_COUNT : RANDOM_COUNT) * 0.65);
+// The four selectable modes: one per topic + a blended one across all topics.
+const MODES = [
+  ...TOPICS.map(t => ({
+    key: t.key, icon: t.icon, title: t.title,
+    desc: `${COUNT} tilfeldige spørsmål fra temaet «${t.title}».`,
+    badge: null,
+  })),
+  {
+    key: 'mixed', icon: '🎲', title: 'Blandet prøve',
+    desc: `${COUNT} tilfeldige spørsmål fra alle tre temaene — som den ekte prøven.`,
+    badge: 'Som ekte prøve',
+  },
+];
+const MODE_BY_KEY = Object.fromEntries(MODES.map(m => [m.key, m]));
 
 // ═══════════════════════════════════════════════════
 //  LOGIKK
 // ═══════════════════════════════════════════════════
-let mode      = 'prove1';
+let mode      = MODES[0].key;
 let active    = [];
 let current   = 0;
 let answers   = [];
@@ -265,17 +266,33 @@ let timerRef  = null;
 let sLeft     = 3600;
 let startTime = null;
 let reviewOpen = false;
-let lastMode  = 'prove1';
+let lastMode  = MODES[0].key;
 
-// Pool info
-const allQ = [...DATA.f1, ...DATA.f2, ...DATA.f3];
+// Blended pool = every topic's questions together.
+const allQ = TOPICS.flatMap(t => DATA[t.key]);
+
+// Build the mode cards and the pool summary.
+const grid = document.getElementById('mode-grid');
+MODES.forEach((m, i) => {
+  const card = document.createElement('div');
+  card.className = 'mode-card' + (i === 0 ? ' selected' : '');
+  card.id = `card-${m.key}`;
+  card.onclick = () => selectMode(m.key);
+  card.innerHTML =
+    `<div class="mode-icon">${m.icon}</div>` +
+    `<div class="mode-title">${m.title}</div>` +
+    `<div class="mode-desc">${m.desc}</div>` +
+    (m.badge ? `<span class="mode-badge">${m.badge}</span>` : '');
+  grid.appendChild(card);
+});
 document.getElementById('pool-stats').textContent =
-  `Totalt ${allQ.length} spørsmål: ${DATA.f1.length} fra fil 1 · ${DATA.f2.length} fra fil 2 · ${DATA.f3.length} fra fil 3`;
+  `Totalt ${allQ.length} spørsmål · ` +
+  TOPICS.map(t => `${t.title.split(',')[0]} ${DATA[t.key].length}`).join(' · ');
 
 function selectMode(m) {
   mode = m;
-  document.getElementById('card-prove1').classList.toggle('selected', m==='prove1');
-  document.getElementById('card-random').classList.toggle('selected', m==='random');
+  MODES.forEach(x =>
+    document.getElementById(`card-${x.key}`).classList.toggle('selected', x.key === m));
 }
 
 function shuffle(arr) {
@@ -297,11 +314,8 @@ function shuffleOpts(q) {
 }
 
 function buildActive() {
-  if (mode === 'prove1') {
-    active = DATA.f1.slice(0, PROVE1_COUNT).map(shuffleOpts);
-  } else {
-    active = shuffle(allQ).slice(0, RANDOM_COUNT).map(shuffleOpts);
-  }
+  const pool = mode === 'mixed' ? allQ : DATA[mode];
+  active = shuffle(pool).slice(0, COUNT).map(shuffleOpts);
 }
 
 function startQuiz() {
@@ -312,10 +326,10 @@ function startQuiz() {
   sLeft    = 3600;
   reviewOpen = false;
 
-  const label = mode==='prove1' ? 'Prøve 1 — Fast rekkefølge (fil 1)' : 'Tilfeldig prøve — Alle filer';
-  document.getElementById('q-mode-label').textContent   = label;
-  document.getElementById('mode-tag').textContent       = mode==='prove1' ? '📋 Prøve 1' : '🎲 Tilfeldig';
-  document.getElementById('result-mode-label').textContent = label;
+  const m = MODE_BY_KEY[mode];
+  document.getElementById('q-mode-label').textContent      = m.title;
+  document.getElementById('mode-tag').textContent          = `${m.icon} ${m.title}`;
+  document.getElementById('result-mode-label').textContent = m.title;
 
   document.getElementById('start-view').style.display  = 'none';
   document.getElementById('quiz-view').style.display   = 'block';
@@ -388,7 +402,8 @@ function finishQuiz() {
   const correct = active.filter((q,i)=>answers[i]===q.correct).length;
   const wrong   = active.filter((q,i)=>answers[i]!==null&&answers[i]!==q.correct).length;
   const skipped = answers.filter(a=>a===null).length;
-  const pass    = correct >= PASS_THRESHOLD;
+  const threshold = Math.round(active.length * PASS_RATIO);
+  const pass    = correct >= threshold;
   const elapsed = Math.floor((Date.now()-startTime)/1000);
 
   document.getElementById('result-circle').className=`result-score ${pass?'pass':'fail'}`;
@@ -397,8 +412,8 @@ function finishQuiz() {
   document.getElementById('result-verdict').className=`result-verdict ${pass?'pass':'fail'}`;
   document.getElementById('result-verdict').textContent=pass?'🎉 Bestått!':'😔 Ikke bestått';
   document.getElementById('result-detail').textContent=pass
-    ?`Gratulerer! Du fikk ${correct} av ${active.length} — grensen er ${PASS_THRESHOLD}.`
-    :`Du fikk ${correct} av ${active.length}. Du trenger minst ${PASS_THRESHOLD} for å bestå.`;
+    ?`Gratulerer! Du fikk ${correct} av ${active.length} — grensen er ${threshold}.`
+    :`Du fikk ${correct} av ${active.length}. Du trenger minst ${threshold} for å bestå.`;
   document.getElementById('st-c').textContent=correct;
   document.getElementById('st-w').textContent=wrong;
   document.getElementById('st-s').textContent=skipped;
@@ -417,7 +432,7 @@ function buildReview() {
     div.className='review-item'+(wrong?' r-wrong':'');
     let answerHtml;
     if(sk) answerHtml='⏭ Hoppet over';
-    else if(ok) answerHtml=`${L[answers[i]]}. ${q.opts[answers[i]]}}`;
+    else if(ok) answerHtml=`✓ ${L[answers[i]]}. ${q.opts[answers[i]]}`;
     else answerHtml=`<span class=\"ri-wrong\">❌ ${L[answers[i]]}. ${q.opts[answers[i]]}</span><span class=\"ri-correct\">✓ Riktig: ${L[q.correct]}. ${q.opts[q.correct]}</span>`;
     div.innerHTML=`<div class=\"ri-q\">${i+1}. ${q.q}</div><div class=\"ri-a\">${answerHtml}</div>`;
     list.appendChild(div);

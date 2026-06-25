@@ -3,7 +3,7 @@
 __pycache__/
 *.pyc
 
-# PyInstaller build çıktıları
+# PyInstaller build output
 build/
 dist/
 *.spec

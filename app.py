@@ -1,9 +1,9 @@
-2#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
-Samfunnskunnskap Quiz – masaüstü uygulaması.
+Samfunnskunnskap Quiz – desktop application.
 
-Kendi kendine yeten samfunnskunnskap_quiz.html dosyasını bir pencerede açar.
-PyInstaller ile .exe (Windows) / .app (macOS) olarak paketlenir.
+Opens the self-contained samfunnskunnskap_quiz.html file in a window.
+Packaged with PyInstaller as an .exe (Windows) / .app (macOS).
 """
 
 import os
@@ -16,7 +16,7 @@ HTML_FILE = "samfunnskunnskap_quiz.html"
 
 
 def resource_path(relative: str) -> str:
-    """PyInstaller ile paketlendiğinde de, kaynaktan çalışırken de doğru yolu döndürür."""
+    """Return the correct path whether bundled by PyInstaller or run from source."""
     base = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base, relative)
 

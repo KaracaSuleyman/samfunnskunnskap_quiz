@@ -8,10 +8,17 @@ A desktop quiz app for preparing for the Norwegian **samfunnskunnskap** (social 
 
 ## ✨ Features
 
-- 📋 **Prøve 1 — Fast:** The first 36 questions from the first file, in fixed order. Great for studying systematically.
-- 🎲 **Tilfeldig prøve:** 36 random questions from all files, reshuffled every time. Ideal for revision.
+**Four quiz modes** — the official curriculum is split into three topics, plus a blended exam:
+
+- 📚 **Utdanning, kompetanse og arbeidsliv** — 36 random questions from this topic.
+- 👨‍👩‍👧 **Familie, helse og hverdagsliv** — 36 random questions from this topic.
+- 🏔️ **Norge før og nå** — 36 random questions from this topic.
+- 🎲 **Blandet prøve** — 36 random questions drawn from all three topics, just like the real test.
+
+Every mode is reshuffled on each attempt (both question order and answer options).
+
 - ⏱️ Timed exam mode (warns you as time runs low).
-- ✅ Instant scoring and a results screen.
+- ✅ Instant scoring, a pass/fail verdict (65% threshold) and an answer review.
 - 📦 **Fully offline** — the questions are embedded inside the app; no extra files to carry around.
 
 ---
@@ -66,14 +73,16 @@ The output lands in the `dist/` folder.
 
 ## 🔄 Regenerate the quiz from the `.docx` sources
 
-The questions live in Word files; `generate_quiz.py` parses them and injects the
-data into `template.html` to produce `samfunnskunnskap_quiz.html`. The correct
-answer of each question is the option marked **bold** in the document.
+The questions live in Word files — **one `.docx` per topic** — and
+`generate_quiz.py` parses them and injects the data into `template.html` to
+produce `samfunnskunnskap_quiz.html`. The correct answer of each question is the
+option marked **bold** in the document.
 
 ```bash
-pip install -r requirements-dev.txt   # python-docx
-python3 generate_quiz.py              # uses the default files & counts
-python3 generate_quiz.py --help       # files, output, question counts, ...
+pip install -r requirements-dev.txt          # python-docx
+python3 generate_quiz.py                      # default files, 36 questions per quiz
+python3 generate_quiz.py --count 20           # change how many questions each quiz draws
+python3 generate_quiz.py --help               # files, output, count, ...
 ```
 
 ---
